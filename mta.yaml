@@ -1,0 +1,81 @@
+_schema-version: "3.2"
+ID: s4-extendui
+version: 0.0.1
+modules:
+- name: s4-extendui-destination-content
+  type: com.sap.application.content
+  requires:
+  - name: uaa_s4-extendui
+    parameters:
+      service-key:
+        name: uaa_s4-extendui-key
+  - name: s4-extendui_html_repo_host
+    parameters:
+      service-key:
+        name: s4-extendui_html_repo_host-key
+  - name: s4-extendui-destination-service
+    parameters:
+      content-target: true
+  parameters:
+    content:
+      subaccount:
+        destinations:
+        - Name: bpServiceManaged_s4_extendui_html_repo_host
+          ServiceInstanceName: s4-extendui-html5-app-host-service
+          ServiceKeyName: s4-extendui_html_repo_host-key
+          sap.cloud.service: bpServiceManaged
+        - Authentication: OAuth2UserTokenExchange
+          Name: bpServiceManaged_uaa_s4_extendui
+          ServiceInstanceName: s4-extendui-xsuaa-service
+          ServiceKeyName: uaa_s4-extendui-key
+          sap.cloud.service: bpServiceManaged
+        existing_destinations_policy: update
+  build-parameters:
+    no-source: true
+- name: s4-extendui_ui_deployer
+  type: com.sap.application.content
+  path: .
+  requires:
+  - name: s4-extendui_html_repo_host
+    parameters:
+      content-target: true
+  build-parameters:
+    build-result: resources
+    requires:
+    - artifacts:
+      - bp-content.zip
+      name: bp
+      target-path: resources/
+- name: bp
+  type: html5
+  path: bp
+  build-parameters:
+    builder: custom
+    commands:
+    - npm run build
+    supported-platforms: []
+resources:
+- name: s4-extendui-destination-service
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: destination
+    service-name: s4-extendui-destination-service
+    service-plan: lite
+- name: s4-extendui_html_repo_host
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: html5-apps-repo
+    service-name: s4-extendui-html5-app-host-service
+    service-plan: app-host
+- name: uaa_s4-extendui
+  type: org.cloudfoundry.managed-service
+  parameters:
+    path: ./xs-security.json
+    service: xsuaa
+    service-name: s4-extendui-xsuaa-service
+    service-plan: application
+build-parameters:
+  before-all:
+  - builder: custom
+    commands:
+    - npm install
